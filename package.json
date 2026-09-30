@@ -1,0 +1,22 @@
+{
+  "name": "solace-housing-website",
+  "version": "1.0.0",
+  "description": "Solace Housing website with built-in admin",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "cookie-session": "^2.1.1",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.13"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "private": true
+}

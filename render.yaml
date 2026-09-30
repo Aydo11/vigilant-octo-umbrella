@@ -1,0 +1,19 @@
+# One-click setup on Render (render.com): New + > Blueprint > pick this repository.
+services:
+  - type: web
+    name: solace-housing
+    runtime: node
+    plan: starter            # needed for the persistent disk (about $7/month)
+    region: frankfurt        # closest Render region to the UK
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: solace-data
+      mountPath: /var/data   # database + uploaded photos & documents live here
+      sizeGB: 2
