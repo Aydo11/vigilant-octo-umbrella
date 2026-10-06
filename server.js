@@ -1,3 +1,17 @@
+// Unpacks the site's folders (src, views, public, seed) from app-bundle.json on start-up,
+// so the repository only needs a few flat files at its root.
+(() => {
+  const fs = require('fs'), path = require('path');
+  const bundle = path.join(__dirname, 'app-bundle.json');
+  if (!fs.existsSync(bundle)) return;
+  const files = JSON.parse(fs.readFileSync(bundle, 'utf8'));
+  for (const [rel, b64] of Object.entries(files)) {
+    const dest = path.join(__dirname, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, Buffer.from(b64, 'base64'));
+  }
+  console.log(`Unpacked ${Object.keys(files).length} site files.`);
+})();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
