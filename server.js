@@ -12,6 +12,23 @@
   }
   console.log(`Unpacked ${Object.keys(files).length} site files.`);
 })();
+// Hotfix: mobile layout (sticky columns on complaints/event pages, timeline numbers)
+(() => {
+  const fs = require('fs'), path = require('path');
+  const swap = (file, from, to) => {
+    const fp = path.join(__dirname, file);
+    if (!fs.existsSync(fp)) return;
+    const s = fs.readFileSync(fp, 'utf8');
+    if (s.includes(from)) fs.writeFileSync(fp, s.split(from).join(to));
+  };
+  swap('views/complaints.ejs', '<div data-reveal="left" style="position:sticky;top:110px">', '<div class="sticky-lg" data-reveal="left">');
+  swap('views/event.ejs', '<aside class="form-card" id="register" data-reveal="right" style="position:sticky;top:100px">', '<aside class="form-card sticky-lg" id="register" data-reveal="right">');
+  swap('views/partials/header.ejs', '/css/site.css?v=1"', '/css/site.css?v=3"');
+  const css = path.join(__dirname, 'public/css/site.css');
+  if (fs.existsSync(css) && !fs.readFileSync(css, 'utf8').includes('.sticky-lg')) {
+    fs.appendFileSync(css, '\n@media (min-width: 1025px) { .sticky-lg { position: sticky; top: 110px; } }\n.timeline::before, .timeline::after { z-index: 0; }\n.tl-item { z-index: 1; }\n');
+  }
+})();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
