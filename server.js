@@ -106,7 +106,7 @@ app.use((req, res, next) => {
     wa: (text) => U.waLink(settings.whatsapp, text || settings.wa_message),
     waRoom: (room, src) => `/wa?room=${room.id}${src ? '&src=' + encodeURIComponent(src) : ''}`,
     telHref: 'tel:' + String(settings.phone || '').replace(/[^\d+]/g, ''),
-    mapQuery: settings.map_query || String(settings.address || '').replace(/\n/g, ', '),
+    mapQuery: U.officeMapQuery(settings),
     editLink: null,
     meta: { title: '', description: '' },
     year: new Date().getFullYear(),
@@ -115,7 +115,8 @@ app.use((req, res, next) => {
 });
 
 const render = (res, view, data = {}) => res.render(view, data);
-const visibleRooms = () => Items.list('rooms').filter((r) => r.status !== 'Let / allocated');
+const visibleRooms = () => Items.list('rooms').filter((r) => r.status !== 'Let / allocated').map((r) => ({ ...r, status: U.roomStatus(r) }));
+const publicPartners = () => Items.list('partners').filter(U.partnerReady);
 const upcomingEvents = () => Items.list('events').filter((e) => e.date >= U.today()).sort((a, b) => (a.date + (a.start_time || '')).localeCompare(b.date + (b.start_time || '')));
 const regCount = (id) => db.prepare("SELECT COUNT(*) n FROM registrations WHERE event_id = ? AND status = 'confirmed'").get(id).n;
 const withSpaces = (e) => { const taken = regCount(e.id); const cap = Number(e.capacity) || 0; return { ...e, taken, spacesLeft: cap ? Math.max(cap - taken, 0) : null, full: cap ? taken >= cap : false }; };
@@ -149,7 +150,7 @@ app.get('/', (req, res) => {
   render(res, 'home', {
     rooms: (rooms.filter((r) => r.featured).length ? rooms.filter((r) => r.featured) : rooms).slice(0, 6), roomCount: rooms.filter((r) => r.status === 'Available now').length,
     services: Items.list('services'), events: upcomingEvents().slice(0, 3).map(withSpaces),
-    stories: storiesPublic().slice(0, 3), partners: Items.list('partners'), news: Items.list('news').sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 2),
+    stories: storiesPublic().slice(0, 3), partners: publicPartners(), news: Items.list('news').sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 2),
   });
 });
 app.get('/about', (req, res) => render(res, 'about', { meta: { title: 'About us' } }));
@@ -159,10 +160,11 @@ app.get('/rooms', (req, res) => {
   const rooms = visibleRooms();
   const areas = [...new Set(rooms.map((r) => r.area).filter(Boolean))].sort();
   const types = [...new Set(rooms.map((r) => r.room_type).filter(Boolean))].sort();
-  render(res, 'rooms', { meta: { title: 'Rooms available' }, rooms, areas, types, src: clean(req.query.src || req.query.utm_source, 40) });
+  render(res, 'rooms', { meta: { title: 'Rooms available' }, rooms, roomCount: rooms.filter((r) => r.status === 'Available now').length, areas, types, src: clean(req.query.src || req.query.utm_source, 40) });
 });
 app.get('/rooms/:slug', (req, res, next) => {
-  const room = Items.bySlug('rooms', req.params.slug);
+  const storedRoom = Items.bySlug('rooms', req.params.slug);
+  const room = storedRoom && { ...storedRoom, status: U.roomStatus(storedRoom) };
   if (!room || (!room.published && !res.locals.isAdmin)) return next();
   const src = clean(req.query.src || req.query.utm_source, 40);
   res.locals.editLink = `/admin/c/rooms/${room.id}`;
@@ -196,7 +198,7 @@ app.post('/referrals', privateUpload.array('files', 5), guard, (req, res) => {
 });
 
 app.get('/working-together', (req, res) => {
-  const p = Items.list('partners');
+  const p = publicPartners();
   render(res, 'working', { meta: { title: 'Working together' }, referral: p.filter((x) => x.category === 'Referral agency'), accredit: p.filter((x) => x.category === 'Accrediting body'), community: p.filter((x) => x.category === 'Community & sport') });
 });
 
