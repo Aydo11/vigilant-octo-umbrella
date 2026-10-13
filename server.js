@@ -29,6 +29,21 @@
     fs.appendFileSync(css, '\n@media (min-width: 1025px) { .sticky-lg { position: sticky; top: 110px; } }\n.timeline::before, .timeline::after { z-index: 0; }\n.tl-item { z-index: 1; }\n');
   }
 })();
+// Hotfix 3: room, event and map images not appearing (their reveal animation never started)
+(() => {
+  const fs = require('fs'), path = require('path');
+  const fp = path.join(__dirname, 'public/js/site.js');
+  if (!fs.existsSync(fp)) return;
+  const s = fs.readFileSync(fp, 'utf8');
+  const from = "  $$('[data-reveal]').forEach((el) => io.observe(el));";
+  const to = "  $$('[data-reveal]').forEach((el) => {\n    if (el.dataset.reveal !== 'mask') return io.observe(el);\n    const mo = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { el.classList.add('in'); mo.disconnect(); } }), { threshold: 0.05 });\n    mo.observe(el.parentElement);\n  });";
+  if (s.includes(from)) fs.writeFileSync(fp, s.split(from).join(to));
+  for (const f of ['views/partials/footer.ejs']) {
+    const p = path.join(__dirname, f); if (!fs.existsSync(p)) continue;
+    const t = fs.readFileSync(p, 'utf8');
+    fs.writeFileSync(p, t.replace(/\/js\/site\.js(\?v=\d+)?"/, '/js/site.js?v=5"'));
+  }
+})();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
