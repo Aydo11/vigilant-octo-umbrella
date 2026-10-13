@@ -57,7 +57,7 @@
   for (const f of ['views/partials/footer.ejs']) {
     const p = path.join(__dirname, f); if (!fs.existsSync(p)) continue;
     const t = fs.readFileSync(p, 'utf8');
-    fs.writeFileSync(p, t.replace(/\/js\/site\.js(\?v=\d+)?"/, '/js/site.js?v=5"'));
+    fs.writeFileSync(p, t.replace(/\/js\/site\.js(\?v=\d+)?"/, '/js/site.js?v=6"'));
   }
 })();
 const express = require('express');
