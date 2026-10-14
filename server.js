@@ -60,6 +60,22 @@
     fs.writeFileSync(p, t.replace(/\/js\/site\.js(\?v=\d+)?"/, '/js/site.js?v=6"'));
   }
 })();
+// Update 5: videos on stories and events; stories shown on the News page and home page
+(() => {
+  const fs = require('fs'), path = require('path'), crypto = require('crypto');
+  const P = {"src/collections.js": {"h": "307a7ec049", "e": [[46, 0, "      { name: 'video', label: 'Video (optional)', type: 'video', help: 'Upload a short clip (MP4 or iPhone MOV, up to 200 MB), or paste a YouTube, Vimeo or Facebook link below instead.' },\n      { name: 'video_url', label: 'Or video link (YouTube, Vimeo or Facebook)', type: 'url', placeholder: 'https://www.youtube.com/watch?v=...' },"], [62, 0, "      { name: 'video', label: 'Video (optional)', type: 'video', help: 'Upload a short clip (MP4 or iPhone MOV, up to 200 MB), or paste a YouTube, Vimeo or Facebook link below instead. Only include people who have given written consent.' },\n      { name: 'video_url', label: 'Or video link (YouTube, Vimeo or Facebook)', type: 'url', placeholder: 'https://www.youtube.com/watch?v=...' },"]]}, "src/admin.js": {"h": "0fa7402c5f", "e": [[22, 2, "  limits: { fileSize: 200 * 1024 * 1024 },\n  fileFilter: (req, f, cb) => cb(null, /\\.(jpe?g|png|webp|gif|svg|avif|pdf|docx?|xlsx?|pptx?|odt|rtf|txt|csv|mp4|m4v|mov|webm)$/i.test(f.originalname)),"], [142, 0, "      case 'video':"], [382, 0, "// Friendly message when an upload is too big or the connection drops mid-upload\nrouter.use((err, req, res, next) => {\n  if (!(err instanceof multer.MulterError) && !/Unexpected end of form|aborted/i.test(String(err && err.message))) return next(err);\n  flash(req, 'err', err.code === 'LIMIT_FILE_SIZE' ? 'That file is too large (the limit is 200 MB). Try a shorter clip, or upload it to YouTube and paste the link instead.' : 'The upload did not finish. Please check your connection and try again.');\n  res.redirect(String(req.get('referer') || '/admin').replace(/#.*$/, ''));\n});\n"]]}, "views/event.ejs": {"h": "bf4ffc1ecc", "e": [[21, 0, "      <%- include('partials/video', { item: ev }) %>"]]}, "views/home.ejs": {"h": "07f168136d", "e": [[86, 0, "    <% if (stories.length) { %>\n    <div class=\"sec-head\" style=\"margin-top:90px\"><div data-reveal><span class=\"eyebrow\">Latest stories</span><h3 style=\"color:#fff;font-size:clamp(1.5rem,2.6vw,2.1rem)\">Recent outings and achievements</h3></div><a class=\"link-arrow\" href=\"/stories\" style=\"color:#fff\" data-reveal>All stories <svg><use href=\"#i-arrow\"/></svg></a></div>\n    <div class=\"grid g3\"><% stories.forEach(function(x, i){ %><%- include('partials/story-card', { s: x, i }) %><% }) %></div>\n    <% } %>"]]}, "views/news.ejs": {"h": "b94e6b065f", "e": [[7, 3, "      <a class=\"card spot\" href=\"<%= p.href || '/news/' + p.slug %>\" data-reveal style=\"--i:<%= i % 3 %>\">\n        <div class=\"thumb\"><div class=\"badges\"><span class=\"badge <%= p.category === 'Newsletter' ? 'navy' : '' %>\"><%= p.category %></span><% if (p.video || p.video_url) { %><span class=\"badge navy\"><svg style=\"width:12px;height:12px\"><use href=\"#i-play\"/></svg>Video</span><% } %></div><% if (p.sample) { %><span class=\"sample-tag\">Sample</span><% } %><%- img(p.image, p.title) || (p.isStory ? '<img src=\"/img/placeholders/community.svg\" alt=\"\">' : '<img src=\"/img/placeholders/news.svg\" alt=\"\">') %></div>\n        <div class=\"body\"><span class=\"muted\" style=\"font-size:.85rem\"><%= fmtDate(p.date) %></span><h3><%= p.title %></h3><p><%= p.summary %></p><div class=\"foot\"><span class=\"link-arrow\"><%= p.isStory ? 'Read story' : 'Read' %> <svg><use href=\"#i-arrow\"/></svg></span><% if (p.attachment) { %><span class=\"badge grey\"><svg style=\"width:14px;height:14px\"><use href=\"#i-download\"/></svg>PDF</span><% } %></div></div>"]]}, "views/story.ejs": {"h": "defe4f887c", "e": [[15, 0, "      <%- include('partials/video', { item: s }) %>"]]}, "views/partials/story-card.ejs": {"h": "f6e25a84f8", "e": [[1, 1, "  <div class=\"thumb\"><% if (s.category || s.video || s.video_url) { %><div class=\"badges\"><% if (s.category) { %><span class=\"badge\"><%= s.category %></span><% } %><% if (s.video || s.video_url) { %><span class=\"badge navy\"><svg style=\"width:12px;height:12px\"><use href=\"#i-play\"/></svg>Video</span><% } %></div><% } %><% if (s.sample) { %><span class=\"sample-tag\">Sample</span><% } %><%- img((s.images || [])[0], s.title) || '<img src=\"/img/placeholders/community.svg\" alt=\"\">' %></div>"]]}, "views/partials/video.ejs": {"new": "<% const vsrc = item.video && item.video.src ? item.video.src : ''; const emb = !vsrc && item.video_url ? videoEmbed(item.video_url) : null; %>\n<% if (vsrc) { %>\n<div class=\"video-box\" data-reveal><video controls playsinline preload=\"metadata\" src=\"<%= vsrc %>#t=0.1\"><a href=\"<%= vsrc %>\">Download the video</a></video></div>\n<% } else if (emb) { %>\n<div class=\"video-box embed\" data-reveal><iframe src=\"<%= emb %>\" title=\"<%= item.title %> (video)\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" allowfullscreen></iframe></div>\n<% } else if (item.video_url && /^https?:\\/\\//i.test(item.video_url)) { %>\n<p data-reveal><a class=\"btn\" href=\"<%= item.video_url %>\" target=\"_blank\" rel=\"noopener\"><svg><use href=\"#i-play\"/></svg>Watch the video</a></p>\n<% } %>\n"}, "views/partials/icons.ejs": {"h": "56b3a40e16", "e": [[42, 0, "<symbol id=\"i-play\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"none\"><path d=\"M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z\"/></symbol>"]]}, "views/partials/header.ejs": {"h": "41ca554584", "e": [[15, 1, "<link rel=\"stylesheet\" href=\"/css/site.css?v=6\">"]]}, "views/admin/_field.ejs": {"h": "5a98836f6c", "e": [[17, 0, "  <% } else if (f.type === 'video') { const vo = v && v.src ? v : null; %>\n    <div data-filefield data-videofield><input type=\"hidden\" name=\"<%= f.name %>__json\" value=\"<%= JSON.stringify(vo) %>\" data-json>\n      <% if (vo) { %><video src=\"<%= vo.src %>\" controls playsinline preload=\"metadata\" style=\"width:100%;max-width:520px;border-radius:0 14px 0 14px;background:#000;margin-bottom:12px;display:block\" data-vprev></video><% } %>\n      <div class=\"filebox\"><svg><use href=\"#i-file\"/></svg><div style=\"flex:1;min-width:0\"><div class=\"nm <%= vo ? '' : 'muted' %>\" data-name><%= vo ? vo.name : 'No video uploaded' %></div><% if (vo) { %><button type=\"button\" class=\"link-btn\" data-vremove style=\"background:none;border:0;padding:0;color:var(--pink);cursor:pointer;font-size:.82rem\">Remove video</button><% } %></div>\n        <label class=\"btn sm navy\" style=\"position:relative;overflow:hidden\"><%= vo ? 'Replace video' : 'Choose video' %><input type=\"file\" name=\"<%= f.name %>__new\" accept=\"video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm\" style=\"position:absolute;inset:0;opacity:0;cursor:pointer\" data-fileinput></label></div></div>"]]}, "views/admin/_foot.ejs": {"h": "70db51218b", "e": [[2, 1, "<script src=\"/js/admin.js?v=4\"></script>"]]}, "public/css/site.css": {"h": "a5831cba50", "e": [[745, 0, "/* Videos on stories and events */\n.video-box{margin:0 0 40px;border-radius:0 28px 0 28px;overflow:hidden;background:#011f2c;box-shadow:0 18px 50px rgba(1,63,88,.18)}\n.video-box video{display:block;width:100%;max-height:78vh;background:#000}\n.video-box.embed{position:relative;aspect-ratio:16/9}\n.video-box.embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}\n.bg-navy .card .body h3{color:var(--navy)}\n"]]}, "public/js/admin.js": {"h": "b23d9922a0", "e": [[99, 1, "    inp.addEventListener('change', () => {\n      const file = inp.files[0]; if (!file) return;\n      const nm = $('[data-name]', f);\n      if (f.hasAttribute('data-videofield') && file.size > 200 * 1024 * 1024) {\n        inp.value = ''; nm.textContent = `${file.name} is ${Math.round(file.size / 1048576)} MB. The limit is 200 MB: trim the clip, or upload it to YouTube and paste the link below.`; nm.classList.remove('muted'); return;\n      }\n      nm.textContent = `${file.name} (${Math.max(1, Math.round(file.size / 1048576))} MB, new, click Save)`; nm.classList.remove('muted');\n    });\n    const rm = $('[data-vremove]', f);\n    if (rm) rm.addEventListener('click', () => { $('[data-json]', f).value = 'null'; const pv = $('[data-vprev]', f); if (pv) pv.remove(); $('[data-name]', f).textContent = 'Video will be removed when you click Save'; rm.remove(); });"], [101, 0, "  // Large uploads: tell staff to wait\n  $$('form').forEach((form) => form.addEventListener('submit', () => {\n    const big = $$('[data-videofield] input[type=file]', form).some((i) => i.files && i.files[0]);\n    if (!big) return;\n    const note = document.createElement('div');\n    note.className = 'flash ok'; note.setAttribute('role', 'status');\n    note.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:999;padding:14px 20px;border-radius:0 14px 0 14px;background:#013F58;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25)';\n    note.textContent = 'Uploading video… this can take a minute or two. Please keep this page open.';\n    document.body.appendChild(note);\n  }));"]]}};
+  for (const [rel, p] of Object.entries(P)) {
+    const fp = path.join(__dirname, rel);
+    if (p.new !== undefined) { fs.mkdirSync(path.dirname(fp), { recursive: true }); fs.writeFileSync(fp, p.new); continue; }
+    if (!fs.existsSync(fp)) continue;
+    const buf = fs.readFileSync(fp);
+    if (crypto.createHash('sha1').update(buf).digest('hex').slice(0, 10) !== p.h) { console.warn('Update 5 skipped a changed file: ' + rel); continue; }
+    const lines = buf.toString('utf8').split('\n');
+    for (const [i, d, ins] of [...p.e].reverse()) lines.splice(i, d, ...(ins === null ? [] : ins.split('\n')));
+    fs.writeFileSync(fp, lines.join('\n'));
+  }
+  console.log('Update 5 applied.');
+})();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -103,6 +119,16 @@ const privateUpload = multer({
 });
 
 // ---------- Shared view helpers ----------
+// Turns a YouTube / Vimeo / Facebook link into an embeddable player address
+function videoEmbed(url) {
+  url = String(url || '').trim(); if (!/^https?:\/\//i.test(url)) return null;
+  let m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i);
+  if (m) return `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0`;
+  m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (m) return `https://player.vimeo.com/video/${m[1]}`;
+  if (/(^|\.)facebook\.com\/|fb\.watch\//i.test(url)) return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false`;
+  return null;
+}
 const NAV = [
   { href: '/about', label: 'About' },
   { href: '/services', label: 'Services' },
@@ -140,6 +166,7 @@ app.use((req, res, next) => {
     mapQuery: U.officeMapQuery(settings),
     editLink: null,
     faqs: (page) => Items.list('faqs').filter((f) => f.page === page),
+    videoEmbed,
     meta: { title: '', description: '' },
     year: new Date().getFullYear(),
   });
@@ -152,7 +179,13 @@ const publicPartners = () => Items.list('partners').filter(U.partnerReady);
 const upcomingEvents = () => Items.list('events').filter((e) => e.date >= U.today()).sort((a, b) => (a.date + (a.start_time || '')).localeCompare(b.date + (b.start_time || '')));
 const regCount = (id) => db.prepare("SELECT COUNT(*) n FROM registrations WHERE event_id = ? AND status = 'confirmed'").get(id).n;
 const withSpaces = (e) => { const taken = regCount(e.id); const cap = Number(e.capacity) || 0; return { ...e, taken, spacesLeft: cap ? Math.max(cap - taken, 0) : null, full: cap ? taken >= cap : false }; };
-const storiesPublic = () => Items.list('stories').filter((s) => s.consent).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+const storiesPublic = () => Items.list('stories').filter((s) => s.consent).sort((a, b) => String(b.date || String(b.created_at || '').slice(0, 10)).localeCompare(String(a.date || String(a.created_at || '').slice(0, 10))));
+const itemDate = (x) => String(x.date || String(x.created_at || '').slice(0, 10));
+// News page feed: news posts plus published tenants' stories, newest first
+const newsFeed = () => [
+  ...Items.list('news').map((p) => ({ ...p, href: `/news/${p.slug}` })),
+  ...storiesPublic().map((s) => ({ ...s, href: `/stories/${s.slug}`, category: 'Story', image: (s.images || [])[0] || null, isStory: true })),
+].sort((a, b) => itemDate(b).localeCompare(itemDate(a)));
 const docs = (section) => Items.list('documents').filter((d) => d.section === section && d.file);
 
 // ---------- Anti-spam ----------
@@ -304,7 +337,7 @@ app.get('/stories/:slug', (req, res, next) => {
   res.locals.editLink = `/admin/c/stories/${s.id}`;
   render(res, 'story', { meta: { title: s.title, description: s.summary }, s, more: storiesPublic().filter((x) => x.id !== s.id).slice(0, 3) });
 });
-app.get('/news', (req, res) => render(res, 'news', { meta: { title: 'News & newsletter' }, posts: Items.list('news').sort((a, b) => String(b.date).localeCompare(String(a.date))), subscribed: req.query.subscribed }));
+app.get('/news', (req, res) => render(res, 'news', { meta: { title: 'News & newsletter' }, posts: newsFeed(), subscribed: req.query.subscribed }));
 app.get('/news/:slug', (req, res, next) => {
   const p = Items.bySlug('news', req.params.slug);
   if (!p || (!p.published && !res.locals.isAdmin)) return next();
