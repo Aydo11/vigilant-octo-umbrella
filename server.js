@@ -92,6 +92,22 @@
   }
   console.log('Update 6 applied.');
 })();
+// Update 7: choose to show the whole image (posters, flyers) or fill the frame
+(() => {
+  const fs = require('fs'), path = require('path'), crypto = require('crypto');
+  const P = {"src/collections.js": {"h": "22fc998d2f", "e": [[46, 0, "      { name: 'image_fit', label: 'How to show the main photo', type: 'select', options: ['Show the whole image (best for posters and flyers)', 'Fill the frame (crops the edges)'], help: 'Choose how the main photo is shown. Posters and flyers usually look best showing the whole image.' },"], [65, 0, "      { name: 'image_fit', label: 'How to show the first (cover) photo', type: 'select', options: ['Fill the frame (crops the edges)', 'Show the whole image (best for posters and flyers)'], help: 'Choose how the first (cover) photo is shown. Posters and flyers usually look best showing the whole image.' },"], [81, 0, "      { name: 'image_fit', label: 'How to show the main photo', type: 'select', options: ['Show the whole image (best for posters and flyers)', 'Fill the frame (crops the edges)'], help: 'Choose how the main photo is shown. Posters and flyers usually look best showing the whole image.' },"], [97, 0, "      { name: 'image_fit', label: 'How to show the main photo', type: 'select', options: ['Fill the frame (crops the edges)', 'Show the whole image (best for posters and flyers)'], help: 'Choose how the main photo is shown. Posters and flyers usually look best showing the whole image.' },"]]}, "views/event.ejs": {"h": "d4b1f6c5f8", "e": [[20, 1, "      <% const evCover = ev.image || (ev.gallery || [])[0]; if (evCover) { %><div class=\"media\" data-reveal=\"mask\" style=\"margin-bottom:40px\"><div class=\"ph <%= fit(ev, 'whole') %>\" style=\"aspect-ratio:16/9\"><%- img(evCover, ev.title) %></div></div><% } %>"]]}, "views/home.ejs": {"h": "68aef8544a", "e": [[122, 1, "        <div class=\"thumb <%= fit(p, 'whole') %>\" style=\"width:42%;aspect-ratio:auto;flex:none\"><%- img(p.image || (p.gallery || [])[0], p.title) %></div>"]]}, "views/news.ejs": {"h": "84f29df620", "e": [[8, 1, "        <div class=\"thumb <%= fit(p, p.isStory ? 'crop' : 'whole') %>\"><div class=\"badges\"><span class=\"badge <%= p.category === 'Newsletter' ? 'navy' : '' %>\"><%= p.category %></span><% if (p.video || p.video_url) { %><span class=\"badge navy\"><svg style=\"width:12px;height:12px\"><use href=\"#i-play\"/></svg>Video</span><% } %></div><% if (p.sample) { %><span class=\"sample-tag\">Sample</span><% } %><%- img(p.image || (p.gallery || [])[0], p.title) || (p.isStory ? '<img src=\"/img/placeholders/community.svg\" alt=\"\">' : '<img src=\"/img/placeholders/news.svg\" alt=\"\">') %></div>"]]}, "views/story.ejs": {"h": "2a5b413286", "e": [[12, 1, "    <% if (ims[0]) { %><div class=\"article-hero <%= fit(s, 'crop') %>\" style=\"max-width:1040px;margin:0 auto\" data-reveal><%- img(ims[0], s.title) %></div><% } %>"]]}, "views/services.ejs": {"h": "fb4f06cdfc", "e": [[24, 1, "        <% if (s.image || (s.gallery || [])[0]) { %><div class=\"media\" style=\"margin-bottom:24px\"><div class=\"ph <%= fit(s, 'crop') %>\" style=\"aspect-ratio:16/10\"><%- img(s.image || s.gallery[0], s.title) %></div></div><% } %>"]]}, "views/post.ejs": {"h": "4a392ccb19", "e": [[8, 1, "  <% const pCover = p.image || (p.gallery || [])[0]; if (pCover) { %><div class=\"article-hero <%= fit(p, 'whole') %>\" style=\"max-width:1040px;margin:0 auto\" data-reveal><%- img(pCover, p.title) %></div><% } %>"]]}, "views/partials/event-card.ejs": {"h": "0c96e66014", "e": [[2, 1, "  <div class=\"thumb <%= fit(ev, 'whole') %>\">"]]}, "views/partials/story-card.ejs": {"h": "0060affb80", "e": [[1, 1, "  <div class=\"thumb <%= fit(s, 'crop') %>\"><% if (s.category || s.video || s.video_url) { %><div class=\"badges\"><% if (s.category) { %><span class=\"badge\"><%= s.category %></span><% } %><% if (s.video || s.video_url) { %><span class=\"badge navy\"><svg style=\"width:12px;height:12px\"><use href=\"#i-play\"/></svg>Video</span><% } %></div><% } %><% if (s.sample) { %><span class=\"sample-tag\">Sample</span><% } %><%- img((s.images || [])[0], s.title) || '<img src=\"/img/placeholders/community.svg\" alt=\"\">' %></div>"]]}, "views/partials/header.ejs": {"h": "da35ff7a60", "e": [[15, 1, "<link rel=\"stylesheet\" href=\"/css/site.css?v=8\">"]]}, "public/css/site.css": {"h": "1344dbc4ef", "e": [[752, 0, "/* \"Show the whole image\" option (posters, flyers) */\n.media .ph.whole { aspect-ratio: auto !important; background: var(--sand); display: grid; place-items: center; }\n.media .ph.whole img { width: 100%; height: auto; min-height: 120px; max-height: 85vh; object-fit: contain; }\n.media:hover .ph.whole img { transform: none; }\n.article-hero.whole img { aspect-ratio: auto; height: auto; max-height: 85vh; object-fit: contain; background: var(--sand); }\n.card .thumb.whole img { object-fit: contain; background: var(--sand); }\n.card:hover .thumb.whole img { transform: scale(1.02); }"]]}};
+  for (const [rel, p] of Object.entries(P)) {
+    const fp = path.join(__dirname, rel);
+    if (p.new !== undefined) { fs.mkdirSync(path.dirname(fp), { recursive: true }); fs.writeFileSync(fp, p.new); continue; }
+    if (!fs.existsSync(fp)) continue;
+    const buf = fs.readFileSync(fp);
+    if (crypto.createHash('sha1').update(buf).digest('hex').slice(0, 10) !== p.h) { console.warn('Update 7 skipped a changed file: ' + rel); continue; }
+    const lines = buf.toString('utf8').split('\n');
+    for (const [i, d, ins] of [...p.e].reverse()) lines.splice(i, d, ...(ins === null ? [] : ins.split('\n')));
+    fs.writeFileSync(fp, lines.join('\n'));
+  }
+  console.log('Update 7 applied.');
+})();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -183,6 +199,8 @@ app.use((req, res, next) => {
     editLink: null,
     faqs: (page) => Items.list('faqs').filter((f) => f.page === page),
     videoEmbed,
+    // 'whole' shows the full picture (posters); 'crop' fills the frame. def = default when not chosen
+    fit: (it, def = 'crop') => { const v = String((it && it.image_fit) || ''); return (v ? /^Show/i.test(v) : def === 'whole') ? 'whole' : ''; },
     meta: { title: '', description: '' },
     year: new Date().getFullYear(),
   });
